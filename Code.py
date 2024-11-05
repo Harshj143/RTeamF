@@ -1,7 +1,4 @@
-#DEVELOPERS
-# Koustubh
 # Harsh
-# Farhan
 import os
 import json
 import time
