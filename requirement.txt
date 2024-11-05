@@ -1,0 +1,10 @@
+cve_searchsploit
+python-Wappalyzer
+boto3
+pymongo
+aiohttp
+asyncio
+setuptools
+logging4
+bs4
+typing
