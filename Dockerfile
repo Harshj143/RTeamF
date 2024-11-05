@@ -66,8 +66,7 @@ WORKDIR /usr/lib/python3/dist-packages
 COPY /Require/sublist3r.py .
 
 WORKDIR /opt/results
-COPY /rtf.sh .
-RUN chmod +x rtf.sh
-CMD ["./rtf.sh"]
+COPY /rtf.py .
+CMD ["./rtf.py"]
 
 
