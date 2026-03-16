@@ -136,18 +136,57 @@ def get_openports(subdomain):
 
     return open_ports
 
-def get_vulns_found(subdomain):
+def get_vulns_found(subdomain, openports=None, tech_found=None):
+    if openports is None:
+        openports = []
+    if tech_found is None:
+        tech_found = []
+        
     vulns_found = []
-    with open(f"Nuclei/{domain_name}_nuclei_results.json") as f:
-        nuclei_data = f.read().split("\n")
-    for vuln in nuclei_data:
-        if vuln == "":
+    try:
+        with open(f"Nuclei/{domain_name}_nuclei_results.json") as f:
+            nuclei_data = f.read().split("\n")
+    except FileNotFoundError:
+        return []
+        
+    for vuln_str in nuclei_data:
+        if vuln_str == "":
             continue
-        vuln = json.loads(vuln)
-        if not "host" in vuln.keys():
+        vuln = json.loads(vuln_str)
+        if "host" not in vuln.keys():
             continue
-        if vuln["host"] == subdomain and vuln.get("severity") != "info":     
-            vulns_found.append(vuln)
+            
+        if vuln["host"] == subdomain and vuln.get("info", {}).get("severity") != "info":
+            # Baseline confidence based on severity
+            severity = vuln.get("info", {}).get("severity", "low")
+            if severity == "critical":
+                confidence = 100
+            elif severity == "high":
+                confidence = 90
+            elif severity == "medium":
+                confidence = 70
+            else:
+                confidence = 50
+
+            # Penalize if it's explicitly looking for a port that nmap didn't find
+            matched_at = vuln.get("matched-at", "")
+            if ":" in matched_at:
+                try:
+                    port = matched_at.split(":")[-1].strip("/")
+                    if openports and not any(port in p for p in openports):
+                        confidence -= 40  # Heavy penalty for port mismatch
+                except:
+                    pass
+            
+            # Boost if the vulnerability maps to a technology we confirmed via Wappalyzer
+            tags = vuln.get("info", {}).get("tags", [])
+            if any(t.lower() in [tech.lower() for tech in tech_found] for t in tags):
+                confidence += 20
+                
+            # Filter out low-confidence findings
+            if confidence >= 50:
+                vuln["confidence_score"] = min(100, confidence)
+                vulns_found.append(vuln)
     
     return vulns_found
 
@@ -291,10 +330,14 @@ def getDomainInfo(domain):
             # print(jslinks)
             openports = len(get_openports(subdomain_name))
             # pprint(openports)
-            vulns_found = len(get_vulns_found(subdomain_name))
-            # pprint(vulns_found)
             tech_found = len(get_tech_found(subdomain_name))
             # print(tech_found)
+            
+            # Get specific counts for context parsing
+            openports_raw = get_openports(subdomain_name)
+            tech_raw = get_tech_found(subdomain_name)
+            vulns_found = len(get_vulns_found(subdomain_name, openports=openports_raw, tech_found=tech_raw))
+            # pprint(vulns_found)
             cves_found = get_cves_found(subdomain_name)
             # print(cves_found,len(cves_found))
             exploits_found = get_exploits_found(subdomain_name)
@@ -322,13 +365,14 @@ def getSubdomainInfo(subdomain_name):
     # print(jslinks)
     openports = get_openports(subdomain_name)
     pprint(openports)
-    vulns_found = get_vulns_found(subdomain_name)
+    tech_found = get_tech_found(subdomain_name)
+    # print(tech_found)
+    
+    vulns_found = get_vulns_found(subdomain_name, openports=openports, tech_found=tech_found)
     # pprint(vulns_found)
     
     ip = get_ip(subdomain_name)
 
-    tech_found = get_tech_found(subdomain_name)
-    # print(tech_found)
     security_posture = get_security_posture(vulns_found)
     # updating the subdomain json
 

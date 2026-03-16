@@ -1,9 +1,9 @@
-# Harsh
 import os
 import json
 import time
 import re
 import subprocess
+import asyncio
 from pprint import pprint
 import cve_searchsploit as CS
 from Wappalyzer import Wappalyzer, WebPage
@@ -12,6 +12,33 @@ import boto3
 import requests
 import API_Handler as handler
 warnings.filterwarnings("ignore", message="""Caught 'unbalanced parenthesis at position 119' compiling regex""", category=UserWarning )
+
+class TokenBucketRateLimiter:
+    def __init__(self, capacity: int, fill_rate: float):
+        self.capacity = float(capacity)
+        self.tokens = float(capacity)
+        self.fill_rate = float(fill_rate)
+        self.timestamp = time.monotonic()
+
+    async def consume(self, tokens: int = 1):
+        while True:
+            now = time.monotonic()
+            self.tokens += (now - self.timestamp) * self.fill_rate
+            self.timestamp = now
+            if self.tokens > self.capacity:
+                self.tokens = self.capacity
+            
+            if self.tokens >= tokens:
+                self.tokens -= tokens
+                return
+            await asyncio.sleep(0.1)
+
+# NVD allows 50/30s with API Key, 5/30s without.
+API_KEY = os.environ.get("NVD_API_KEY")
+if API_KEY:
+    nvd_limiter = TokenBucketRateLimiter(50, 50.0 / 30.0)
+else:
+    nvd_limiter = TokenBucketRateLimiter(5, 5.0 / 30.0)
 
 autopilot = True
 
@@ -33,28 +60,36 @@ def init():
     os.system("mkdir Wappalyzer")
     return
 
-def exec_sublister(domain_name):
+async def exec_sublister(domain_name):
     os.system("touch Subdomains/sublist3r_results.txt")
-    process = subprocess.Popen([f"sublist3r -d {domain_name} -o Subdomains/sublist3r_results.txt"],shell=True)
-    process.wait()
+    process = await asyncio.create_subprocess_shell(
+        f"sublist3r -d {domain_name} -o Subdomains/sublist3r_results.txt"
+    )
+    await process.wait()
     return
 
-def exec_subfinder(domain_name):
-    process = subprocess.Popen([f"subfinder -d {domain_name} -silent -o Subdomains/subfinder_results.txt"],shell=True)
-    process.wait()
+async def exec_subfinder(domain_name):
+    process = await asyncio.create_subprocess_shell(
+        f"subfinder -d {domain_name} -silent -o Subdomains/subfinder_results.txt"
+    )
+    await process.wait()
     return
 
-def exec_assetfinder(domain_name):
-    process = subprocess.Popen([f"assetfinder {domain_name} > Subdomains/assetfinder_results.txt"],shell = True)
-    process.wait()
+async def exec_assetfinder(domain_name):
+    process = await asyncio.create_subprocess_shell(
+        f"assetfinder {domain_name} > Subdomains/assetfinder_results.txt"
+    )
+    await process.wait()
     return
 
 
-def subdomain_enumeration(domain_name,store = False):
+async def subdomain_enumeration(domain_name,store = False):
 
-    exec_sublister(domain_name)
-    exec_subfinder(domain_name)
-    exec_assetfinder(domain_name)
+    await asyncio.gather(
+        exec_sublister(domain_name),
+        exec_subfinder(domain_name),
+        exec_assetfinder(domain_name)
+    )
 
     with open("Subdomains/sublist3r_results.txt","r") as f:
         sublist3r_data = f.read().splitlines()
@@ -82,13 +117,13 @@ def subdomain_enumeration(domain_name,store = False):
 
     return subdomain_list
 
-def recursive_enum(domain_name,subdomain_list,iter=1):
+async def recursive_enum(domain_name,subdomain_list,iter=1):
     for _ in range(iter):
         newly_found_subdomains_list = []
         for i,subdomain in enumerate(subdomain_list):
             if subdomain in blacklist:
                 continue
-            newly_found_subdomains = subdomain_enumeration(subdomain,store=True)
+            newly_found_subdomains = await subdomain_enumeration(subdomain,store=True)
             if len(newly_found_subdomains) == 1:
                 print(f"No subdomains found for {subdomain} | ({i+1}/{len(subdomain_list)})")
                 print()
@@ -105,7 +140,7 @@ def recursive_enum(domain_name,subdomain_list,iter=1):
     return subdomain_list
 
  
-def exec_aquatone(domain_name):
+async def exec_aquatone(domain_name):
     if not autopilot:
         print("Would you like to run Aquatone to get screenshots? (This may take a while)")
         x = input("Yes/No:")
@@ -114,8 +149,10 @@ def exec_aquatone(domain_name):
 
     os.system(f"mkdir Aquatone/{domain_name}")
     try:
-        process = subprocess.Popen([f"cat Subdomains/{domain_name}_subdomain_results.txt | aquatone -out Aquatone/{domain_name}"],shell=True)
-        process.wait()
+        process = await asyncio.create_subprocess_shell(
+            f"cat Subdomains/{domain_name}_subdomain_results.txt | aquatone -out Aquatone/{domain_name}"
+        )
+        await process.wait()
         print("Aquatone scan completed.\n")
     except Exception as e:
         print(f"Error executing Aquatone: {e}")
@@ -124,16 +161,20 @@ def exec_aquatone(domain_name):
  
     return 
 
-def exec_httprobe(domain_name):
+async def exec_httprobe(domain_name):
     os.system(f"touch Subdomains/{domain_name}_livedomain_results.txt")
-    result = subprocess.check_output([f"cat Subdomains/{domain_name}_subdomain_results.txt | httprobe"],shell = True)
-    data = result.decode().strip().splitlines()
+    process = await asyncio.create_subprocess_shell(
+        f"cat Subdomains/{domain_name}_subdomain_results.txt | httprobe",
+        stdout=asyncio.subprocess.PIPE
+    )
+    stdout, _ = await process.communicate()
+    data = stdout.decode().strip().splitlines()
 
     with open(f"Subdomains/{domain_name}_livedomain_results.txt","w") as f:
         f.write("\n".join(i for i in data))
     return data
 
-def exec_linkfinder(domain_name):
+async def exec_linkfinder(domain_name):
     print("---------PASS 1---------")
     if not autopilot:
         print("Would you like to run Linkfinder to conduct JS File Recon? (This may take a while)")
@@ -151,7 +192,7 @@ def exec_linkfinder(domain_name):
             data = f.read().split("\n")
             print("IN TRY:", data)
     except:
-        data = exec_httprobe(domain_name)
+        data = await exec_httprobe(domain_name)
         print("EXCEPTION:", data)
 
     js_links = []
@@ -159,7 +200,12 @@ def exec_linkfinder(domain_name):
     os.system(f"mkdir Js_Links/{domain_name}_cache")
     for i,subdomain in enumerate(data):
         print('SUBDOAMIN IZ', i, subdomain)
-        r = subprocess.check_output([f"python3 /opt/LinkFinder/linkfinder.py -i {subdomain} -d -o cli"],shell=True).decode("utf-8")
+        process = await asyncio.create_subprocess_shell(
+            f"python3 /opt/LinkFinder/linkfinder.py -i {subdomain} -d -o cli",
+            stdout=asyncio.subprocess.PIPE
+        )
+        stdout, _ = await process.communicate()
+        r = stdout.decode("utf-8")
         print("FINAL PASS HERE NO ERRORS")
         # regex to find links in js text
         regex=r"\b((?:https?://)?(?:(?:www\.)?(?:[\da-z\.-]+)\.(?:[a-z]{2,6})|(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)|(?:(?:[0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,7}:|(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|(?:[0-9a-fA-F]{1,4}:){1,5}(?::[0-9a-fA-F]{1,4}){1,2}|(?:[0-9a-fA-F]{1,4}:){1,4}(?::[0-9a-fA-F]{1,4}){1,3}|(?:[0-9a-fA-F]{1,4}:){1,3}(?::[0-9a-fA-F]{1,4}){1,4}|(?:[0-9a-fA-F]{1,4}:){1,2}(?::[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:(?:(?::[0-9a-fA-F]{1,4}){1,6})|:(?:(?::[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(?::[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(?:ffff(?::0{1,4}){0,1}:){0,1}(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])|(?:[0-9a-fA-F]{1,4}:){1,4}:(?:(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])))(?::[0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])?(?:/[\w\.-]*)*/?)\b"
@@ -184,7 +230,7 @@ def exec_linkfinder(domain_name):
         f.write("\n".join(i for i in js_links))
     return 
 
-def exec_nuclei(domain_name):
+async def exec_nuclei(domain_name):
     if not autopilot:
         print("Would you like to run Nuclei for Vulnerability Assesment? (This may take a while)")
         x = input("Yes/No:")
@@ -192,8 +238,10 @@ def exec_nuclei(domain_name):
             return
     os.system(f"touch Nuclei/{domain_name}_nuclei_results.json")
     try:
-        process = subprocess.Popen([f"nuclei -l Subdomains/{domain_name}_subdomain_results.txt  -s critical,high,medium,low -j -o Nuclei/{domain_name}_nuclei_results.json"],shell=True)
-        process.wait()
+        process = await asyncio.create_subprocess_shell(
+            f"nuclei -l Subdomains/{domain_name}_subdomain_results.txt  -s critical,high,medium,low -j -o Nuclei/{domain_name}_nuclei_results.json"
+        )
+        await process.wait()
         print("Nuclei scan completed")
     except Exception as e:
         print(f"Error executing nuclie: {e}")
@@ -201,7 +249,7 @@ def exec_nuclei(domain_name):
     return
     
 
-def exec_wig(domain_name):
+async def exec_wig(domain_name):
     if not autopilot:
         print("Would you like to run Wig for finding CMS information? (This may take a while)")
         x = input("Yes/No:")
@@ -212,15 +260,15 @@ def exec_wig(domain_name):
         subdomain_list = f.read().splitlines()
 
     os.system(f"mkdir Wig/{domain_name}_cache")
-    for i,subdomain in enumerate(subdomain_list):
-        print(f"Scanning for {subdomain} | {i+1}/{len(subdomain_list)}")
-        output_path= f"""Wig/{domain_name}_cache/{subdomain}_json"""
-        stop_after = 100
-        threads = 80
-        final_wig_command = f"wig -n {stop_after} -w {output_path} -t {threads} {subdomain}"
-        process = subprocess.Popen([final_wig_command], shell=True)
-        process.wait()
-        print("Wig scan completed")
+    
+    async def run_wig(sub):
+        output_path = f"Wig/{domain_name}_cache/{sub}_json"
+        final_wig_command = f"wig -n 100 -w {output_path} -t 80 {sub}"
+        proc = await asyncio.create_subprocess_shell(final_wig_command)
+        await proc.wait()
+    
+    await asyncio.gather(*(run_wig(sub) for sub in subdomain_list))
+    print("Wig scans completed")
         
     final_output = {}
     for subdomain in subdomain_list:
@@ -279,7 +327,7 @@ def exec_wappalyzer(domain_name):
     print("Wappalyzer completed.\n")
     return
 
-def exec_nmap(domain_name):
+async def exec_nmap(domain_name):
     if not autopilot:
         print("Would you like to run Nmap for finding port scan of subdomains? (This may take a while)")
         x = input("Yes/No:")
@@ -289,11 +337,14 @@ def exec_nmap(domain_name):
     with open(f"Subdomains/{domain_name}_subdomain_results.txt","r") as f:
         subdomain_list = f.read().splitlines()
     os.system(f"mkdir Nmap/{domain_name}")
-    for i,subdomain in enumerate(subdomain_list):
-        print(f"Scanning for {subdomain} | {i+1}/{len(subdomain_list)}")
-        process = subprocess.Popen([f"nmap -sV {subdomain} -oN Nmap/{domain_name}/{subdomain}_portscan_results.txt"],shell = True)
-        process.wait()
+    
+    async def run_nmap(sub):
+        proc = await asyncio.create_subprocess_shell(
+            f"nmap -sV {sub} -oN Nmap/{domain_name}/{sub}_portscan_results.txt"
+        )
+        await proc.wait()
 
+    await asyncio.gather(*(run_nmap(sub) for sub in subdomain_list))
     return
 
 def parse_wappalyzer_results(domain_name):
@@ -314,17 +365,21 @@ def parse_wappalyzer_results(domain_name):
 
 
 
-def get_cves_for_cpe(cpe):
+async def get_cves_for_cpe(cpe):
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
     }
+    if API_KEY:
+        headers['apiKey'] = API_KEY
 
     url = f"https://services.nvd.nist.gov/rest/json/cves/2.0?cpeName={cpe}"
 
     try:
+        await nvd_limiter.consume(1)
         response = requests.get(url, headers=headers)
         while response.status_code == 503:
-            time.sleep(6)
+            await asyncio.sleep(6)
+            await nvd_limiter.consume(1)
             response = requests.get(url, headers=headers)
 
         if response.status_code == 200:
@@ -347,7 +402,7 @@ def save_cve_results_to_file(cpe, cve_ids):
         for cve_id in cve_ids:
             f.write(f"CVE: {cve_id}\n")
 
-def exec_cve_search(domain_name):
+async def exec_cve_search(domain_name):
     CS.update_db()
     data = parse_wappalyzer_results(domain_name)
     cve_results = {}
@@ -359,8 +414,7 @@ def exec_cve_search(domain_name):
         cpe_list = data[subdomain]
         # print(cpe_list)
         for cpe in cpe_list:
-            time.sleep(8)  # To avoid overloading the API
-            cve_ids = get_cves_for_cpe(cpe)  # Replace with your function to get CVE IDs
+            cve_ids = await get_cves_for_cpe(cpe)  # Rate limiting handled inside
             if cve_ids:
                 save_cve_results_to_file(cpe, cve_ids)
                 print(f"Saved CVEs for {cpe} in {cpe.replace(':', '_')}_cve_search_results.txt")
@@ -368,9 +422,6 @@ def exec_cve_search(domain_name):
                 cpe_filename = cpe.replace(":", "_")
                 with open(f"CVE_Search/Cache/{cpe_filename}_cve_search_results.txt", "w") as f:
                     print(f"No CVEs found for {cpe}, created blank file {cpe_filename}_cve_search_results.txt")
-            # Insert path to cve-search here
-            # process = subprocess.Popen([f"/home/kali/Documents/cve-search/bin/search.py -p {cpe} > CVE_Search/Cache/{cpe_filename}_cve_search_results.txt"],shell=True)
-            # process.wait()
 
 
     for subdomain in data.keys():
@@ -426,21 +477,28 @@ bucket_name = "<changethis>"
 local_directory = "/opt/results"
 s3_prefix = f"<changethis>/{os.environ['DOMAIN']}_results"
 
-def Run_Tool(domain_name):
+async def Run_Tool(domain_name):
     init()
-    subdomain_list = subdomain_enumeration(domain_name)
-    recursive_enum(domain_name,subdomain_list)
-    exec_aquatone(domain_name)
-    exec_httprobe(domain_name)
-    exec_linkfinder(domain_name)
-    exec_nuclei(domain_name)
-    exec_wig(domain_name)
-    exec_nmap(domain_name)
+    subdomain_list = await subdomain_enumeration(domain_name)
+    await recursive_enum(domain_name,subdomain_list)
+    await exec_httprobe(domain_name)
+    
+    # Run massive parallel stages
+    await asyncio.gather(
+        exec_aquatone(domain_name),
+        exec_linkfinder(domain_name),
+        exec_nuclei(domain_name),
+        exec_nmap(domain_name),
+        exec_wig(domain_name)
+    )
+    
+    # Wappalyzer is synchronous, keep it isolated
     exec_wappalyzer(domain_name)
-    exec_cve_search(domain_name)
+    
+    await exec_cve_search(domain_name)
     upload_directory_to_s3(bucket_name, local_directory, s3_prefix)
     handler.getDomainInfo(domain_name)
     handler.subdomain()
     return
 
-Run_Tool(os.environ['DOMAIN'])
+asyncio.run(Run_Tool(os.environ.get('DOMAIN', 'test.com')))
