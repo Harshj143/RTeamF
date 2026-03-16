@@ -1,0 +1,675 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Source+Serif+4:ital,wght@0,300;0,400;1,300;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  .article {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    font-family: 'Source Serif 4', serif;
+    font-weight: 300;
+    color: var(--color-text-primary);
+    line-height: 1.8;
+    font-size: 18px;
+  }
+
+  .tag-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 2rem;
+  }
+
+  .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .tag-red { background: #FCEBEB; color: #A32D2D; }
+  .tag-blue { background: #E6F1FB; color: #185FA5; }
+  .tag-teal { background: #E1F5EE; color: #0F6E56; }
+
+  .headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.15;
+    margin: 0 0 1rem;
+    color: var(--color-text-primary);
+    letter-spacing: -0.5px;
+  }
+
+  .subheadline {
+    font-size: 20px;
+    color: var(--color-text-secondary);
+    font-weight: 300;
+    font-style: italic;
+    margin: 0 0 2rem;
+    line-height: 1.5;
+  }
+
+  .byline {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 1.25rem 0;
+    border-top: 0.5px solid var(--color-border-tertiary);
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+    margin-bottom: 2.5rem;
+  }
+
+  .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #EEEDFE;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: #534AB7;
+    flex-shrink: 0;
+  }
+
+  .byline-meta { font-size: 14px; }
+  .byline-meta strong { font-weight: 500; font-family: 'Source Serif 4', serif; }
+  .byline-meta span { color: var(--color-text-secondary); margin-left: 6px; }
+
+  .hero-visual {
+    background: #0D1117;
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 0 0 2.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+    overflow: hidden;
+  }
+
+  .term-line { display: flex; gap: 8px; }
+  .term-prompt { color: #3fb950; }
+  .term-cmd { color: #e6edf3; }
+  .term-comment { color: #8b949e; }
+  .term-output { color: #58a6ff; padding-left: 16px; }
+  .term-found { color: #f97316; }
+
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #185FA5;
+    margin: 3rem 0 0.5rem;
+    font-weight: 500;
+  }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0 0 1rem;
+    color: var(--color-text-primary);
+    line-height: 1.25;
+  }
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 21px;
+    font-weight: 400;
+    font-style: italic;
+    margin: 2rem 0 0.75rem;
+    color: var(--color-text-primary);
+  }
+
+  p { margin: 0 0 1.25rem; }
+
+  .pipeline {
+    margin: 1.5rem 0 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .pipe-step {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .pipe-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 44px;
+    flex-shrink: 0;
+  }
+
+  .pipe-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .pipe-line {
+    width: 1px;
+    flex: 1;
+    min-height: 16px;
+    background: var(--color-border-tertiary);
+    margin: 2px 0;
+  }
+
+  .pipe-content {
+    padding: 0 0 1.5rem 12px;
+    flex: 1;
+  }
+
+  .pipe-title {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 500;
+    font-size: 15px;
+    margin: 4px 0 4px;
+    color: var(--color-text-primary);
+  }
+
+  .pipe-desc {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin: 0;
+    font-family: 'Source Serif 4', serif;
+    font-weight: 300;
+  }
+
+  .chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--color-background-secondary);
+    color: var(--color-text-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    white-space: nowrap;
+  }
+
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+
+  .callout {
+    border-left: 3px solid #185FA5;
+    padding: 1rem 1.25rem;
+    margin: 1.5rem 0;
+    background: var(--color-background-secondary);
+    border-radius: 0 8px 8px 0;
+    font-size: 16px;
+    font-style: italic;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+  }
+
+  .code-block {
+    background: #0D1117;
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin: 1.25rem 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    overflow-x: auto;
+    color: #e6edf3;
+  }
+
+  .kw { color: #ff7b72; }
+  .fn { color: #d2a8ff; }
+  .str { color: #a5d6ff; }
+  .cm { color: #8b949e; }
+  .num { color: #79c0ff; }
+  .var2 { color: #e6edf3; }
+
+  .score-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin: 1.5rem 0;
+    background: var(--color-background-primary);
+  }
+
+  .score-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 1rem;
+  }
+
+  .score-tile {
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-align: center;
+  }
+
+  .score-tile .num2 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .score-tile .lbl {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .arch-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin: 1.5rem 0;
+  }
+
+  .arch-card {
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: 10px;
+    padding: 1rem;
+    background: var(--color-background-primary);
+  }
+
+  .arch-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
+  .arch-title {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 500;
+    font-size: 14px;
+    margin: 0 0 4px;
+    color: var(--color-text-primary);
+  }
+
+  .arch-sub {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    font-family: 'Source Serif 4', serif;
+    font-weight: 300;
+  }
+
+  .divider {
+    height: 0.5px;
+    background: var(--color-border-tertiary);
+    margin: 2.5rem 0;
+  }
+
+  .conclusion-box {
+    background: var(--color-background-secondary);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin: 2rem 0 0;
+  }
+
+  .conclusion-box p {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.75;
+  }
+
+  .inline-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: var(--color-text-primary);
+  }
+
+  @media (max-width: 560px) {
+    .headline { font-size: 30px; }
+    .arch-row { grid-template-columns: 1fr; }
+    .score-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<div class="article">
+
+  <div class="tag-bar">
+    <span class="tag tag-red">Cybersecurity</span>
+    <span class="tag tag-blue">Python</span>
+    <span class="tag tag-teal">DevSecOps</span>
+  </div>
+
+  <h1 class="headline">I Built an Automated Recon Engine That Maps Your Entire Attack Surface While You Sleep</h1>
+  <p class="subheadline">How RTeamF chains nine open-source security tools into a single pipeline — from raw domain to scored CVEs, uploaded to S3 and MongoDB.</p>
+
+  <div class="byline">
+    <div class="avatar">RT</div>
+    <div class="byline-meta">
+      <strong>RTeamF</strong><span>· Security Engineering · 12 min read</span>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <div class="term-line"><span class="term-prompt">$</span><span class="term-cmd">python3 rteamf.py --target example.com</span></div>
+    <div class="term-line"><span class="term-output">[*] Starting subdomain enumeration...</span></div>
+    <div class="term-line"><span class="term-found">[+] Found 47 live subdomains via subfinder + sublist3r</span></div>
+    <div class="term-line"><span class="term-output">[*] Running httprobe for liveness checks...</span></div>
+    <div class="term-line"><span class="term-found">[+] 31 subdomains responding. Initiating nmap sweep.</span></div>
+    <div class="term-line"><span class="term-output">[*] Fingerprinting tech stack via Wappalyzer...</span></div>
+    <div class="term-line"><span class="term-found">[+] CPEs mapped → querying NIST NVD API for CVEs...</span></div>
+    <div class="term-line"><span class="term-found">[!] 14 CVEs found. 3 critical. Exploit-DB IDs retrieved.</span></div>
+    <div class="term-line"><span class="term-output">[*] Security posture score: 38/100 — HIGH RISK</span></div>
+    <div class="term-line"><span class="term-output">[*] Results uploaded → S3 + MongoDB cluster cloudRTF</span></div>
+    <div class="term-line"><span class="term-prompt">$</span><span class="term-comment"> # Total elapsed: 4m 12s</span></div>
+  </div>
+
+  <p>Every bug bounty hunter and red team operator knows the drill: before you can find vulnerabilities, you need to map the terrain. That means hours of manual recon — running tool after tool, copy-pasting outputs, cross-referencing CVE databases, and eventually stitching a picture together from a dozen text files.</p>
+
+  <p>I got tired of that. So I built <strong>RTeamF</strong> — an end-to-end automated reconnaissance framework that takes a single domain as input and handles everything else: subdomain discovery, liveness checks, visual recon, JavaScript crawling, port scanning, tech-stack fingerprinting, CVE mapping, and risk scoring. Then it stores the results in AWS S3 and MongoDB.</p>
+
+  <p>This post walks through the architecture, the key design decisions, and the code that makes it work.</p>
+
+  <div class="divider"></div>
+
+  <div class="section-label">The Architecture</div>
+  <h2>Nine tools. One pipeline. Zero manual steps.</h2>
+
+  <p>The core insight behind RTeamF is simple: every major recon tool accepts stdin or a file as input and produces stdout or file output. That means they can be chained. Python's <span class="inline-code">subprocess</span> module is the glue — it orchestrates each tool, captures its output, and feeds it downstream.</p>
+
+  <div class="pipeline">
+
+    <div class="pipe-step">
+      <div class="pipe-left">
+        <div class="pipe-dot" style="background:#EEEDFE;color:#534AB7;">1</div>
+        <div class="pipe-line"></div>
+      </div>
+      <div class="pipe-content">
+        <p class="pipe-title">Subdomain Discovery</p>
+        <p class="pipe-desc">Three tools run in parallel — Sublist3r, Subfinder, and Assetfinder — to maximize subdomain coverage. Results are deduplicated and filtered against a blacklist of CDN noise like <span class="inline-code">awstrack.me</span> and <span class="inline-code">bit.ly</span>.</p>
+        <div class="chips"><span class="chip">sublist3r</span><span class="chip">subfinder</span><span class="chip">assetfinder</span></div>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-left">
+        <div class="pipe-dot" style="background:#E6F1FB;color:#185FA5;">2</div>
+        <div class="pipe-line"></div>
+      </div>
+      <div class="pipe-content">
+        <p class="pipe-title">Liveness Verification</p>
+        <p class="pipe-desc">The raw subdomain list is piped into httprobe. Dead subdomains are discarded before any further scanning — saving enormous compute time downstream.</p>
+        <div class="chips"><span class="chip">httprobe</span></div>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-left">
+        <div class="pipe-dot" style="background:#E1F5EE;color:#0F6E56;">3</div>
+        <div class="pipe-line"></div>
+      </div>
+      <div class="pipe-content">
+        <p class="pipe-title">Visual Reconnaissance</p>
+        <p class="pipe-desc">Aquatone drives headless Chrome to visit every live endpoint and capture screenshots. This allows rapid visual triage without opening a browser manually.</p>
+        <div class="chips"><span class="chip">aquatone</span><span class="chip">headless chrome</span></div>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-left">
+        <div class="pipe-dot" style="background:#FAEEDA;color:#854F0B;">4</div>
+        <div class="pipe-line"></div>
+      </div>
+      <div class="pipe-content">
+        <p class="pipe-title">JavaScript Link Extraction</p>
+        <p class="pipe-desc">LinkFinder crawls live subdomains and extracts JavaScript files. Custom regex patterns then mine those files for hidden API endpoints, internal paths, and leaked secrets.</p>
+        <div class="chips"><span class="chip">LinkFinder</span><span class="chip">regex</span></div>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-left">
+        <div class="pipe-dot" style="background:#FAECE7;color:#993C1D;">5</div>
+        <div class="pipe-line"></div>
+      </div>
+      <div class="pipe-content">
+        <p class="pipe-title">Port & Service Scanning</p>
+        <p class="pipe-desc">Nmap runs with <span class="inline-code">-sV</span> (version detection) against every live subdomain, identifying open ports and the exact service versions running — the foundation for CVE matching later.</p>
+        <div class="chips"><span class="chip">nmap -sV</span></div>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-left">
+        <div class="pipe-dot" style="background:#EEEDFE;color:#3C3489;">6</div>
+        <div class="pipe-line"></div>
+      </div>
+      <div class="pipe-content">
+        <p class="pipe-title">Technology Stack Fingerprinting</p>
+        <p class="pipe-desc">Wappalyzer and wig analyze each live endpoint and identify CMS versions, frontend frameworks, server software, and more — then normalize everything into CPE (Common Platform Enumeration) format for API queries.</p>
+        <div class="chips"><span class="chip">wappalyzer</span><span class="chip">wig</span><span class="chip">CPE</span></div>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-left">
+        <div class="pipe-dot" style="background:#FCEBEB;color:#A32D2D;">7</div>
+        <div class="pipe-line"></div>
+      </div>
+      <div class="pipe-content">
+        <p class="pipe-title">Vulnerability Scanning & CVE Mapping</p>
+        <p class="pipe-desc">Two parallel vulnerability sources: Nuclei scans for live misconfigurations and exploits using critical/high/medium/low severity templates. Simultaneously, the NIST NVD REST API is queried with each discovered CPE to map the exact tech stack to known CVEs, with Exploit-DB IDs fetched for each hit.</p>
+        <div class="chips"><span class="chip">nuclei</span><span class="chip">NIST NVD API</span><span class="chip">cve_searchsploit</span></div>
+      </div>
+    </div>
+
+    <div class="pipe-step">
+      <div class="pipe-left">
+        <div class="pipe-dot" style="background:#E1F5EE;color:#085041;">8</div>
+        <div class="pipe-line"></div>
+      </div>
+      <div class="pipe-content">
+        <p class="pipe-title">Risk Scoring & Storage</p>
+        <p class="pipe-desc">API.py aggregates all findings into a weighted security posture score (0–100), categorizes risk, structures results as JSON, and pushes raw scan data to S3 and structured intelligence to MongoDB.</p>
+        <div class="chips"><span class="chip">AWS S3</span><span class="chip">MongoDB</span><span class="chip">JSON</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Deep Dive #1</div>
+  <h2>Chaining tools with Python subprocess</h2>
+
+  <p>The entire orchestration layer is built on Python's <span class="inline-code">subprocess</span> module. Each tool is invoked, its output captured, cleaned, and passed along. Here's a simplified view of how subdomain discovery feeds into liveness checking:</p>
+
+  <div class="code-block"><span class="kw">import</span> <span class="var2">subprocess</span>
+
+<span class="cm"># Step 1: collect raw subdomains from three tools</span>
+<span class="kw">def</span> <span class="fn">enumerate_subdomains</span>(<span class="var2">domain</span>):
+    <span class="var2">raw</span> = <span class="fn">set</span>()
+    <span class="kw">for</span> <span class="var2">tool_cmd</span> <span class="kw">in</span> [
+        [<span class="str">"subfinder"</span>, <span class="str">"-d"</span>, <span class="var2">domain</span>, <span class="str">"-silent"</span>],
+        [<span class="str">"assetfinder"</span>, <span class="str">"--subs-only"</span>, <span class="var2">domain</span>],
+        [<span class="str">"sublist3r"</span>, <span class="str">"-d"</span>, <span class="var2">domain</span>, <span class="str">"-o"</span>, <span class="str">"/dev/stdout"</span>],
+    ]:
+        <span class="var2">result</span> = <span class="var2">subprocess</span>.<span class="fn">run</span>(<span class="var2">tool_cmd</span>, <span class="var2">capture_output</span>=<span class="kw">True</span>, <span class="var2">text</span>=<span class="kw">True</span>)
+        <span class="var2">raw</span>.<span class="fn">update</span>(<span class="var2">result</span>.<span class="var2">stdout</span>.<span class="fn">splitlines</span>())
+    <span class="kw">return</span> <span class="fn">filter_blacklist</span>(<span class="var2">raw</span>)
+
+<span class="cm"># Step 2: pipe subdomains into httprobe for liveness</span>
+<span class="kw">def</span> <span class="fn">check_liveness</span>(<span class="var2">subdomains</span>):
+    <span class="var2">joined</span> = <span class="str">"\n"</span>.<span class="fn">join</span>(<span class="var2">subdomains</span>)
+    <span class="var2">proc</span> = <span class="var2">subprocess</span>.<span class="fn">run</span>(
+        [<span class="str">"httprobe"</span>],
+        <span class="var2">input</span>=<span class="var2">joined</span>, <span class="var2">capture_output</span>=<span class="kw">True</span>, <span class="var2">text</span>=<span class="kw">True</span>
+    )
+    <span class="kw">return</span> <span class="var2">proc</span>.<span class="var2">stdout</span>.<span class="fn">splitlines</span>()  <span class="cm"># only live URLs returned</span></div>
+
+  <div class="callout">The key design principle: every function consumes the previous function's output. There's no shared mutable state — just clean data flowing downstream, stage by stage.</div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Deep Dive #2</div>
+  <h2>From tech stack to CVEs — the CPE bridge</h2>
+
+  <p>This is the most technically interesting part of RTeamF. Once Wappalyzer identifies the technologies running on a target — say, WordPress 6.2, Apache 2.4.51, PHP 8.1 — those are normalized into CPE strings. CPE is a standardized naming scheme used by NIST to catalog software.</p>
+
+  <p>With a CPE in hand, RTeamF hits the NIST NVD REST API directly:</p>
+
+  <div class="code-block"><span class="kw">import</span> <span class="var2">requests</span>
+
+<span class="kw">def</span> <span class="fn">query_nvd_for_cves</span>(<span class="var2">cpe_string</span>):
+    <span class="var2">url</span> = <span class="str">"https://services.nvd.nist.gov/rest/json/cves/2.0"</span>
+    <span class="var2">params</span> = {
+        <span class="str">"cpeName"</span>: <span class="var2">cpe_string</span>,
+        <span class="str">"resultsPerPage"</span>: <span class="num">50</span>
+    }
+    <span class="var2">resp</span> = <span class="var2">requests</span>.<span class="fn">get</span>(<span class="var2">url</span>, <span class="var2">params</span>=<span class="var2">params</span>)
+    <span class="var2">data</span> = <span class="var2">resp</span>.<span class="fn">json</span>()
+
+    <span class="var2">cves</span> = []
+    <span class="kw">for</span> <span class="var2">item</span> <span class="kw">in</span> <span class="var2">data</span>.<span class="fn">get</span>(<span class="str">"vulnerabilities"</span>, []):
+        <span class="var2">cve</span> = <span class="var2">item</span>[<span class="str">"cve"</span>]
+        <span class="var2">cves</span>.<span class="fn">append</span>({
+            <span class="str">"id"</span>: <span class="var2">cve</span>[<span class="str">"id"</span>],
+            <span class="str">"severity"</span>: <span class="var2">cve</span>[<span class="str">"metrics"</span>].<span class="fn">get</span>(<span class="str">"cvssMetricV31"</span>, [{}])[<span class="num">0</span>]
+                         .<span class="fn">get</span>(<span class="str">"cvssData"</span>, {}).<span class="fn">get</span>(<span class="str">"baseSeverity"</span>, <span class="str">"UNKNOWN"</span>),
+            <span class="str">"description"</span>: <span class="var2">cve</span>[<span class="str">"descriptions"</span>][<span class="num">0</span>][<span class="str">"value"</span>]
+        })
+    <span class="kw">return</span> <span class="var2">cves</span></div>
+
+  <p>Each returned CVE ID is then passed to <span class="inline-code">cve_searchsploit</span> to retrieve any corresponding Exploit-DB entries. If a working public exploit exists for a CVE found on your target, RTeamF will surface it automatically.</p>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Deep Dive #3</div>
+  <h2>The risk scoring algorithm</h2>
+
+  <p>Raw CVE counts and Nuclei findings are useful, but hard to act on. RTeamF's <span class="inline-code">API.py</span> module calculates a unified security posture score out of 100 using a weighted severity model:</p>
+
+  <div class="score-card">
+    <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--color-text-secondary);margin:0 0 0.75rem;">severity weight table</p>
+    <div class="score-grid">
+      <div class="score-tile" style="background:#FCEBEB;">
+        <span class="num2" style="color:#A32D2D;">×5</span>
+        <span class="lbl" style="color:#A32D2D;">critical</span>
+      </div>
+      <div class="score-tile" style="background:#FAEEDA;">
+        <span class="num2" style="color:#854F0B;">×4</span>
+        <span class="lbl" style="color:#854F0B;">high</span>
+      </div>
+      <div class="score-tile" style="background:#E6F1FB;">
+        <span class="num2" style="color:#185FA5;">×2</span>
+        <span class="lbl" style="color:#185FA5;">medium</span>
+      </div>
+      <div class="score-tile" style="background:#E1F5EE;">
+        <span class="num2" style="color:#0F6E56;">×1</span>
+        <span class="lbl" style="color:#0F6E56;">low / info</span>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--color-text-secondary);margin:0.75rem 0 0;font-family:'Source Serif 4',serif;font-weight:300;">The weighted sum is normalized against a theoretical maximum and inverted — a score of 100 means zero findings, while lower scores indicate greater exposure. Thresholds map to labeled risk tiers: Safe → Moderate → High Risk.</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Deep Dive #4</div>
+  <h2>Containerizing the entire stack</h2>
+
+  <p>One of the biggest headaches in security tooling is dependency management. Nuclei, nmap, httprobe, Wappalyzer, wig — each has its own quirks, system dependencies, and version requirements. On a fresh machine, getting all of them working reliably is a multi-hour exercise.</p>
+
+  <p>RTeamF solves this by containerizing everything on <span class="inline-code">kalilinux/kali-rolling</span>:</p>
+
+  <div class="code-block"><span class="cm"># Dockerfile (abbreviated)</span>
+<span class="kw">FROM</span> <span class="var2">kalilinux/kali-rolling</span>
+
+<span class="cm"># OS-level security tools</span>
+<span class="kw">RUN</span> <span class="var2">apt-get install -y</span> \
+    <span class="str">nmap subfinder nuclei httprobe</span> \
+    <span class="str">chromium-driver python3-pip</span>
+
+<span class="cm"># Python layer with custom Wappalyzer + wig overrides</span>
+<span class="kw">COPY</span> <span class="var2">requirements.txt</span> <span class="str">.</span>
+<span class="kw">RUN</span> <span class="var2">pip3 install -r requirements.txt</span>
+<span class="kw">COPY</span> <span class="var2">custom_require/</span> <span class="str">/overrides/</span>
+
+<span class="kw">ENTRYPOINT</span> [<span class="str">"python3"</span>, <span class="str">"code.py"</span>]</div>
+
+  <p>The "custom require overrides" are worth calling out. Both Wappalyzer and wig have upstream maintenance issues — their PyPI packages lag behind or break on newer Python versions. Rather than fork them publicly, RTeamF vendors patched copies that are layered in during the Docker build. This keeps the container self-contained and reproducible.</p>
+
+  <p>The practical payoff: you can spin up a distributed scan by launching multiple containers in parallel, each targeting a different domain, with results aggregating into the same MongoDB cluster. No environment inconsistencies. No "works on my machine."</p>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Storage Layer</div>
+  <h2>Two-tier persistence: S3 for raw data, MongoDB for intelligence</h2>
+
+  <p>After a scan completes, RTeamF performs two separate writes:</p>
+
+  <div class="arch-row">
+    <div class="arch-card">
+      <div class="arch-icon" style="background:#E6F1FB;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#185FA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <p class="arch-title">AWS S3</p>
+      <p class="arch-sub">Full scan directories — screenshots, raw tool outputs, nmap XML — uploaded recursively for long-term storage and audit.</p>
+    </div>
+    <div class="arch-card">
+      <div class="arch-icon" style="background:#E1F5EE;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+      </div>
+      <p class="arch-title">MongoDB</p>
+      <p class="arch-sub">Structured JSON intelligence — per-subdomain records with ports, stack, CVE counts, exploit IDs, and posture score — inserted into cloudRTF cluster.</p>
+    </div>
+    <div class="arch-card">
+      <div class="arch-icon" style="background:#EEEDFE;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#534AB7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      </div>
+      <p class="arch-title">JSON Schema</p>
+      <p class="arch-sub">Each record maps subdomain → open ports → tech stack → JS links → CVE count → exploit count → risk score. Queryable instantly.</p>
+    </div>
+  </div>
+
+  <p>This two-tier approach separates concerns cleanly: S3 is the audit trail and raw evidence store, while MongoDB is the operational intelligence layer you'd query for dashboards, alerting, or downstream workflows.</p>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Lessons Learned</div>
+  <h2>What I'd do differently</h2>
+
+  <h3>Rate limiting the NVD API</h3>
+  <p>NIST's NVD API is public but rate-limited. On large scans with many unique CPEs, you'll hit the threshold quickly. The current implementation uses a simple retry with backoff, but a proper token-bucket rate limiter and an API key (which raises the limit significantly) would be the production-grade solution.</p>
+
+  <h3>Async tool orchestration</h3>
+  <p>The current pipeline is largely sequential. Many stages — nmap, Wappalyzer, Nuclei — are independent of each other given the same input (the live subdomain list). Migrating to <span class="inline-code">asyncio</span> or a lightweight task queue like Celery would cut total scan time significantly on large target surfaces.</p>
+
+  <h3>False positive filtering</h3>
+  <p>Nuclei templates, particularly at the info and low severity level, produce noise. A confidence scoring layer — weighting findings by template quality, corroboration across tools, and historical false-positive rates — would make the output more actionable.</p>
+
+  <div class="divider"></div>
+
+  <div class="conclusion-box">
+    <p>RTeamF started as a personal productivity tool for cutting recon time during engagements. It's evolved into something more interesting: a demonstration that the gap between raw security tooling and structured intelligence can be closed with a few hundred lines of Python, a Dockerfile, and some thoughtful orchestration. The tools existed. The APIs existed. The missing piece was the glue — and now it's automated.</p>
+  </div>
+
+</div>
